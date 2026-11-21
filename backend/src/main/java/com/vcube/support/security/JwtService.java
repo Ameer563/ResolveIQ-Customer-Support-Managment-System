@@ -1,0 +1,27 @@
+package com.vcube.support.security;
+
+import io.jsonwebtoken.*;
+import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
+import java.util.Date;
+
+@Service
+public class JwtService {
+    private final SecretKey key;
+    private final long ttl;
+
+    public JwtService(@Value("${app.jwt.secret}") String secret, @Value("${app.jwt.expiry-ms}") long ttl) {
+        this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        this.ttl = ttl;
+    }
+    public String generate(String email, String role) {
+        return Jwts.builder().subject(email).claim("role", role).issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + ttl)).signWith(key).compact();
+    }
+    public Claims parse(String token) {
+        return Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload();
+    }
+}

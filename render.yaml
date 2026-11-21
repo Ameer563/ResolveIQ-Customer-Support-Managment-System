@@ -1,0 +1,39 @@
+# Render Blueprint. MySQL is not a native Render database: create a free MySQL on
+# Aiven / Railway / FreeSQLDatabase / PlanetScale-compatible host and set DB_* below.
+services:
+  - type: web
+    name: support-api
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /api/health
+    envVars:
+      - key: DB_URL          # jdbc:mysql://HOST:PORT/DBNAME?useSSL=true&serverTimezone=UTC
+        sync: false
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: AI_API_KEY
+        sync: false
+      - key: AI_BASE_URL
+        value: https://api.openai.com
+      - key: AI_MODEL
+        value: gpt-4o-mini
+      - key: CORS_ORIGINS    # your frontend URL, e.g. https://support-web.onrender.com
+        sync: false
+  - type: web
+    name: support-web
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_URL    # your backend URL, e.g. https://support-api.onrender.com
+        sync: false
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
